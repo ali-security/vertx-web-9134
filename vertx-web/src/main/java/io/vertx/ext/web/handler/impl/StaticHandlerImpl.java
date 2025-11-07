@@ -208,15 +208,16 @@ public class StaticHandlerImpl implements StaticHandler {
 
     if (!includeHidden) {
       file = getFile(path, context);
-      int idx = file.lastIndexOf('/');
-      String name = file.substring(idx + 1);
-      if (name.length() > 0 && name.charAt(0) == '.') {
-        // skip
-        if (!context.request().isEnded()) {
-          context.request().resume();
+      for (int idx = file.indexOf('/'); idx >= 0; idx = file.indexOf('/', idx + 1)) {
+        String name = file.substring(idx + 1);
+        if (name.length() > 0 && name.charAt(0) == '.') {
+          // skip
+          if (!context.request().isEnded()) {
+            context.request().resume();
+          }
+          context.next();
+          return;
         }
-        context.next();
-        return;
       }
     }
 
@@ -763,11 +764,13 @@ public class StaticHandlerImpl implements StaticHandler {
               }
               files.append("<li><a href=\"");
               files.append(normalizedDir);
-              files.append(file);
+              String encodedUriPath = Utils.encodeUriPath(file);
+              files.append(encodedUriPath);
               files.append("\" title=\"");
-              files.append(file);
+              String escapedHTML = Utils.escapeHTML(file);
+              files.append(escapedHTML);
               files.append("\">");
-              files.append(file);
+              files.append(escapedHTML);
               files.append("</a></li>");
             }
 

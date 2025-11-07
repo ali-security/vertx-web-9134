@@ -32,6 +32,11 @@ jobs:
           distribution: temurin
       - name: Run tests
         run: mvn -s .github/maven-ci-settings.xml clean verify -B
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-4.x-${{ matrix.jdk }}-${{ matrix.os }}
+          path: "**/target/*.jar"
   Apollo-Link-Tests:
     runs-on: ubuntu-latest
     strategy:

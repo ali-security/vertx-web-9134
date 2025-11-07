@@ -126,12 +126,14 @@ public class StaticHandlerTest extends WebTestBase {
   @Test
   public void testGetHiddenPageSubdir() throws Exception {
     testRequest(HttpMethod.GET, "/somedir/.hidden.html", 200, "OK", "<html><body>Hidden page</body></html>");
+    testRequest(HttpMethod.GET, "/somedir/.hidden/otherpage.html", 200, "OK", "<html><body>Subdirectory other page</body></html>");
   }
 
   @Test
   public void testCantGetHiddenPageSubdir() throws Exception {
     stat.setIncludeHidden(false);
     testRequest(HttpMethod.GET, "/somedir/.hidden.html", 404, "Not Found");
+    testRequest(HttpMethod.GET, "/somedir/.hidden/otherpage.html", 404, "Not Found");
   }
 
   @Test
@@ -654,6 +656,35 @@ public class StaticHandlerTest extends WebTestBase {
     stat.setDirectoryTemplate(dirTemplate);
 
     testDirectoryListingHtmlCustomTemplate(dirTemplate);
+  }
+
+  @Test
+  public void testCustomDirectoryListingHtmlEscaping() throws Exception {
+    File testDir = new File("target/test-classes/webroot/dirxss");
+    try {
+      Files.createDirectories(testDir.toPath());
+      File dangerousFile = new File(testDir, "<img src=x onerror=alert('XSS-FILE')>.txt");
+      java.nio.file.Path dangerousFilePath = dangerousFile.toPath();
+      Files.deleteIfExists(dangerousFilePath);
+      Files.createFile(dangerousFilePath);
+
+      stat.setDirectoryListing(true);
+
+      testRequest(HttpMethod.GET, "/dirxss/", req -> req.putHeader("accept", "text/html"), resp -> resp.bodyHandler(buff -> {
+        assertEquals("text/html", resp.headers().get("content-type"));
+        String sBuff = buff.toString();
+        // Check that the filename is properly escaped in HTML content
+        assertTrue(sBuff.contains("&#60;img src=x onerror=alert(&#39;XSS-FILE&#39;)&#62;.txt"));
+        // Check that the filename is properly encoded in the URI
+        assertTrue(sBuff.contains("/dirxss/%3Cimg%20src=x%20onerror=alert('XSS-FILE')%3E.txt"));
+        testComplete();
+      }), 200, "OK", null);
+      await();
+
+      Files.deleteIfExists(dangerousFilePath);
+    } finally {
+      Files.deleteIfExists(testDir.toPath());
+    }
   }
 
   private void testDirectoryListingHtmlCustomTemplate(String dirTemplateFile) throws Exception {
