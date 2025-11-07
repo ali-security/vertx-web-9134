@@ -8,18 +8,16 @@ on:
     branches:
       - master
       - '[0-9]+.[0-9x]+'
-  schedule:
-    - cron:  '0 4 * * *'
 jobs:
   Test:
     name: Run tests
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-22.04, windows-2022]
         jdk: [8]
         include:
-          - os: ubuntu-latest
+          - os: ubuntu-22.04
             jdk: 17
     runs-on: ${{ matrix.os }}
     steps:
@@ -38,7 +36,7 @@ jobs:
           name: artifact-4.x-${{ matrix.jdk }}-${{ matrix.os }}
           path: "**/target/*.jar"
   Apollo-Link-Tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -69,7 +67,7 @@ jobs:
         working-directory: vertx-web-graphql
         if: ${{ always() }}
   GraphQLWS-Tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -100,7 +98,7 @@ jobs:
         working-directory: vertx-web-graphql
         if: ${{ always() }}
   SockJS-WriteHandler-Tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -134,7 +132,7 @@ jobs:
     name: Deploy to OSSRH
     if: ${{ github.repository_owner == 'vert-x3' && (github.event_name == 'push' || github.event_name == 'schedule') }}
     needs: [Test, Apollo-Link-Tests, SockJS-WriteHandler-Tests]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     env:
       VERTX_NEXUS_USERNAME: ${{ secrets.VERTX_NEXUS_USERNAME }}
       VERTX_NEXUS_PASSWORD: ${{ secrets.VERTX_NEXUS_PASSWORD }}
